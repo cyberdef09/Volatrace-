@@ -1,16 +1,16 @@
 # Volatrace - Windows Memory Forensics & Incident Triage Framework
 
-Volatrace is an automated digital forensics and incident response (DFIR) framework designed to eliminate manual command-line overhead during memory analysis. It rapidly parses raw Windows memory images, reconstructs process execution lineages, detects injected shellcode, maps active network connections, and compiles all artifacts into an interactive, SOC-ready HTML triage dashboard.
+Volatrace is an automated digital forensics and incident response (DFIR) command-line tool designed to eliminate manual overhead during memory analysis. It parses raw memory images, reconstructs process execution hierarchies, detects injected shellcode, maps active network connections, and compiles all artifacts into an interactive, SOC-ready HTML triage dashboard.
 
 ---
 
-## Key Features
+## Features
 
-- Automated Incident Triage: Runs critical memory inspection routines sequentially without manual multi-step commands.
-- Process Hierarchy Mapping: Reconstructs parent-child execution paths to expose anomalous child processes, root shell invocations, and masqueraded binaries.
-- Injected Shellcode Detection: Scans target virtual memory descriptors for unbacked allocations carrying PAGE_EXECUTE_READWRITE permissions.
-- Network Socket Recovery: Reconstructs active, listening, and closed TCP/UDP endpoints to identify Command and Control (C2) communication.
-- Responsive SOC Dashboard: Outputs a dark-themed HTML report equipped with real-time text search, risk scoring, and categorized investigation tabs.
+- **Automated Memory Triage:** Executes core forensic routines sequentially without manual multi-step commands.
+- **Process Lineage Analysis:** Uncovers process family trees to flag suspicious child processes, unauthorized shell spawns, and masquerading system binaries.
+- **Injected Shellcode Hunting:** Scans target virtual memory descriptors for unbacked allocations carrying `PAGE_EXECUTE_READWRITE` permissions.
+- **Active Network Socket Tracking:** Identifies listening, active, and terminated network sockets to pinpoint outbound Command & Control (C2) channels.
+- **Interactive Visual Dashboard:** Builds a standalone dark-mode HTML incident report with search, severity indicators, and tabbed inspection views.
 
 ---
 
@@ -18,87 +18,98 @@ Volatrace is an automated digital forensics and incident response (DFIR) framewo
 
 | Tactic | Technique | ID | Detection Artifact |
 | :--- | :--- | :--- | :--- |
-| Execution | Command and Scripting Interpreter | T1059 | Child cmd.exe spawned under desktop shell (explorer.exe) |
-| Defense Evasion | Process Injection | T1055 | Unbacked RWX memory sections identified during injection triage |
-| Defense Evasion | Masquerading | T1036 | Processes executing outside standard System32 paths |
+| Execution | Command and Scripting Interpreter | T1059 | Child `cmd.exe` spawned under standard user processes |
+| Defense Evasion | Process Injection | T1055 | Unbacked RWX memory allocations identified during injection triage |
+| Defense Evasion | Masquerading | T1036 | Processes executing outside verified operating system paths |
 | Command and Control | Application Layer Protocol | T1071 | Rogue network sockets recovered during endpoint scan |
 
 ---
 
-## Complete User Guide: Step-by-Step Commands
+## Windows Installation & Usage Guide
 
-### Step 1: Clone the Repository
-
-For Windows:
-git clone https://github.com/cyberdef09/Volatrace-.git
+### 1. Clone the Repository
+```cmd
+git clone [https://github.com/cyberdef09/Volatrace-.git](https://github.com/cyberdef09/Volatrace-.git)
 cd Volatrace-
+```
 
-For Linux:
-git clone https://github.com/cyberdef09/Volatrace-.git
-cd Volatrace-
-
----
-
-### Step 2: Set Up Virtual Environment (Optional but Recommended)
-
-For Windows (Command Prompt):
+### 2. Set Up Virtual Environment (Recommended)
+```cmd
 python -m venv venv
 venv\Scripts\activate
+```
 
-For Linux (Bash):
+### 3. Install Dependencies
+```cmd
+pip install -r requirements.txt
+```
+
+### 4. Place Target Memory Dump
+Copy your target memory image (`sample.raw`, `memory.dmp`, or `.vmem`) inside the `Volatrace-` folder.
+
+Verify the file exists:
+```cmd
+dir sample.raw
+```
+
+### 5. Run Triage Scan
+```cmd
+python Volatrace.py sample.raw
+```
+
+*(Replace `sample.raw` with the exact filename of your memory dump).*
+
+### 6. View Interactive Report
+```cmd
+start output\Forensic_Dashboard_*.html
+```
+
+---
+
+## Linux Installation & Usage Guide
+
+### 1. Clone the Repository
+```bash
+git clone [https://github.com/cyberdef09/Volatrace-.git](https://github.com/cyberdef09/Volatrace-.git)
+cd Volatrace-
+```
+
+### 2. Set Up Virtual Environment (Recommended)
+```bash
 python3 -m venv venv
 source venv/bin/activate
+```
 
----
-
-### Step 3: Install All Dependencies
-
-For Windows:
-pip install -r requirements.txt
-
-For Linux:
+### 3. Install Dependencies
+```bash
 pip3 install -r requirements.txt
+```
 
----
+### 4. Place Target Memory Dump
+Copy your target memory image (`sample.raw`, `memory.dmp`, or `.vmem`) inside the `Volatrace-` folder.
 
-### Step 4: Add Your Target Memory Dump
-Place your raw memory dump file (such as sample.raw, memory.dmp, or evidence.raw) directly inside the Volatrace- folder.
-
-To verify the file is present:
-
-For Windows:
-dir sample.raw
-
-For Linux:
+Verify the file exists:
+```bash
 ls -lh sample.raw
+```
 
----
-
-### Step 5: Run Automated Triage Analysis
-
-For Windows:
-python Volatrace.py sample.raw
-
-For Linux:
+### 5. Run Triage Scan
+```bash
 python3 Volatrace.py sample.raw
+```
 
-(Note: Replace sample.raw with the exact filename of your memory image).
+*(Replace `sample.raw` with the exact filename of your memory dump).*
 
----
-
-### Step 6: View the Interactive Dashboard Report
-Once the scan completes, open the generated HTML report in your browser:
-
-For Windows:
-start output\Forensic_Dashboard_*.html
-
-For Linux:
+### 6. View Interactive Report
+```bash
 xdg-open output/Forensic_Dashboard_*.html
+```
 
 ---
 
-## Expected Terminal Output During Execution
+## Expected Terminal Output
 
+```text
 =================================================================
       Volatrace - SOC Tier-2 Memory Forensics Dashboard       
 =================================================================
@@ -110,5 +121,5 @@ xdg-open output/Forensic_Dashboard_*.html
 
 [✓] Investigation Complete!
 [✓] Dashboard Ready: output/Forensic_Dashboard_20260920_110000.html
+```
 
----
