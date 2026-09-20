@@ -18,17 +18,17 @@ Volatrace is an automated Digital Forensics and Incident Response (DFIR) framewo
 
 | Tactic | Technique | ID | Detection Artifact |
 | :--- | :--- | :--- | :--- |
-| **Execution** | Command and Scripting Interpreter | T1059 | Child `cmd.exe` spawned under desktop shell (`explorer.exe`) |
-| **Defense Evasion** | Process Injection | T1055 | Unbacked RWX memory sections identified via `malfind` |
-| **Defense Evasion** | Masquerading | T1036 | Processes executing outside standard `System32` paths |
-| **Command and Control** | Application Layer Protocol | T1071 | Rogue network sockets recovered via `netscan` |
+| Execution | Command and Scripting Interpreter | T1059 | Child `cmd.exe` spawned under desktop shell (`explorer.exe`) |
+| Defense Evasion | Process Injection | T1055 | Unbacked RWX memory sections identified via `malfind` |
+| Defense Evasion | Masquerading | T1036 | Processes executing outside standard `System32` paths |
+| Command and Control | Application Layer Protocol | T1071 | Rogue network sockets recovered via `netscan` |
 
 ---
 
 ## 🚀 Installation
 
 ### 1. Prerequisites
-Ensure Python 3.8+ and Git are installed on your host system (Windows or Linux).
+Ensure Python 3.8+ is installed on your host system (Windows or Linux).
 
 ### 2. Clone the Repository
 ```bash
