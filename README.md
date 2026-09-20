@@ -28,32 +28,71 @@ Volatrace is an automated Digital Forensics and Incident Response (DFIR) framewo
 ## Complete User Guide: Step-by-Step Commands
 
 ### Step 1: Clone the repository
-git clone https://github.com/cyberdef09/Volatrace-.git
 
-### Step 2: Enter project folder
+For Windows:
+git clone https://github.com/cyberdef09/Volatrace-.git
 cd Volatrace-
 
-### Step 3: Install all dependencies
+For Linux:
+git clone https://github.com/cyberdef09/Volatrace-.git
+cd Volatrace-
+
+---
+
+### Step 2: Set Up Virtual Environment (Optional but Recommended)
+
+For Windows (Command Prompt):
+python -m venv venv
+venv\Scripts\activate
+
+For Linux (Bash):
+python3 -m venv venv
+source venv/bin/activate
+
+---
+
+### Step 3: Install All Dependencies
+
+For Windows:
 pip install -r requirements.txt
 
-### Step 4: Add your target memory dump
-Copy your acquired Windows memory file (e.g. sample.raw, memory.dmp, or evidence.raw) directly into this folder.
+For Linux:
+pip3 install -r requirements.txt
+
+---
+
+### Step 4: Add Your Target Memory Dump
+Place your raw memory dump file (such as sample.raw, memory.dmp, or evidence.raw) directly inside the Volatrace- folder.
 
 To verify the file is present:
+
+For Windows:
 dir sample.raw
 
-### Step 5: Run the automated triage analysis
+For Linux:
+ls -lh sample.raw
+
+---
+
+### Step 5: Run Automated Triage Analysis
+
+For Windows:
 python Volatrace.py sample.raw
 
-(Replace sample.raw with the exact filename of your memory dump).
+For Linux:
+python3 Volatrace.py sample.raw
 
-### Step 6: View the interactive dashboard report
-Once the terminal displays analysis complete, open the generated HTML report in your browser:
+(Replace sample.raw with the exact filename of your memory image).
 
-On Windows:
+---
+
+### Step 6: View the Interactive Dashboard Report
+Once the scan completes, open the generated HTML report in your browser:
+
+For Windows:
 start output\Forensic_Dashboard_*.html
 
-On Linux:
+For Linux:
 xdg-open output/Forensic_Dashboard_*.html
 
 ---
