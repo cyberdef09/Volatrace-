@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MemHawk Triage Incident Report</title>
+    <style>
+        :root {
+            --bg: #090d16;
+            --card-bg: #131b2e;
+            --border: #232f48;
+            --accent: #38bdf8;
+            --danger: #ef4444;
+            --success: #10b981;
+            --text-main: #f1f5f9;
+            --text-muted: #94a3b8;
+        }
+        * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        body { margin: 0; background: var(--bg); color: var(--text-main); padding: 24px; }
+        
+        /* Top Hero Header */
+        .top-nav { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 24px; }
+        .brand { display: flex; align-items: center; gap: 12px; }
+        .brand h1 { margin: 0; font-size: 24px; letter-spacing: -0.5px; color: #fff; }
+        .brand .tag { background: rgba(56, 189, 248, 0.1); color: var(--accent); padding: 4px 10px; border-radius: 20px; font-size: 12px; border: 1px solid var(--accent); }
+
+        /* Stat Metrics Cards */
+        .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stat-card { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; padding: 18px; }
+        .stat-card .label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; font-weight: 600; margin-bottom: 6px; }
+        .stat-card .value { font-size: 28px; font-weight: 800; }
+        .stat-card.alert { border-left: 4px solid var(--danger); }
+        .stat-card.alert .value { color: var(--danger); }
+
+        /* Tabs Navigation */
+        .tabs-header { display: flex; gap: 8px; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+        .tab-btn { background: transparent; border: none; color: var(--text-muted); padding: 10px 18px; font-size: 14px; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; }
+        .tab-btn.active { color: var(--accent); border-bottom: 2px solid var(--accent); }
+        
+        /* Search Bar */
+        .search-container { margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center; }
+        .search-input { width: 100%; max-width: 400px; background: var(--card-bg); border: 1px solid var(--border); padding: 10px 14px; border-radius: 6px; color: #fff; outline: none; }
+        .search-input:focus { border-color: var(--accent); }
+
+        /* Data Tables */
+        .table-wrap { background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px; overflow-x: auto; box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+        table { width: 100%; border-collapse: collapse; font-size: 13px; text-align: left; }
+        th { background: #17223b; padding: 14px 16px; color: #cbd5e1; font-weight: 600; border-bottom: 1px solid var(--border); position: sticky; top: 0; }
+        td { padding: 12px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); color: #e2e8f0; }
+        tr:hover td { background: rgba(255,255,255,0.02); }
+        tr.danger-row td { background: rgba(239, 68, 68, 0.08); border-left: 2px solid var(--danger); }
+
+        /* Badges */
+        .badge { padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 700; }
+        .badge-red { background: #7f1d1d; color: #fca5a5; border: 1px solid #ef4444; }
+        .badge-blue { background: #0c4a6e; color: #7dd3fc; border: 1px solid #0284c7; }
+        .badge-gray { background: #334155; color: #94a3b8; }
+
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+    </style>
+</head>
+<body>
+
+    <div class="top-nav">
+        <div class="brand">
+            <h1>🦅 MemHawk Triage Analyzer</h1>
+            <span class="tag">Incident: Evidence #01</span>
+        </div>
+        <div style="font-size: 13px; color: var(--text-muted);">
+            Image: <strong>sample.raw</strong> | UTC: 2026-09-19 22:08:33
+        </div>
+    </div>
+
+    <!-- Overview Stat Cards -->
+    <div class="stats-grid">
+        <div class="stat-card alert">
+            <div class="label">Code Injection Hits</div>
+            <div class="value">11</div>
+        </div>
+        <div class="stat-card alert">
+            <div class="label">Phishing Artifacts</div>
+            <div class="value">CRITICAL</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Unauthorized Terminals</div>
+            <div class="value">DETECTED</div>
+        </div>
+        <div class="stat-card">
+            <div class="label">Overall Triage Verdict</div>
+            <div class="value" style="color: var(--danger);">COMPROMISED</div>
+        </div>
+    </div>
+
+    <!-- Global Instant Search -->
+    <div class="search-container">
+        <input type="text" id="filterInput" class="search-input" placeholder="🔍 Instant search process, PID, IP, or path...">
+    </div>
+
+    <!-- Interactive Tabs -->
+    <div class="tabs-header">
+        <button class="tab-btn active" onclick="switchTab('tab-injection', this)">🚨 Injected Code (22)</button>
+        <button class="tab-btn" onclick="switchTab('tab-process', this)">🌳 Process Hierarchy (42)</button>
+        <button class="tab-btn" onclick="switchTab('tab-network', this)">🌐 Network Sockets (118)</button>
+    </div>
+
+    <!-- Tab 1: Code Injection -->
+    <div id="tab-injection" class="tab-content active">
+        <div class="table-wrap">
+            <table id="table-injection">
+                <thead>
+                    <tr><th>PID</th><th>Process</th><th>Start VPN</th><th>End VPN</th><th>Tag</th><th>Protection</th><th>CommitCharge</th><th>PrivateMemory</th><th>File output</th><th>Notes</th><th>Hexdump</th><th>Disasm</th></tr>
+                </thead>
+                <tbody>
+                    <tr class='danger-row'><td>816</td><td>svchost.exe</td><td>0xdf0000</td><td>0xdfffff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>16</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00 8.......H. .A...</td><td>41 ba 80 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 81 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 82 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00</td></tr>
+<tr class='danger-row'><td>472</td><td>svchost.exe</td><td>0xb30000</td><td>0xb3ffff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>16</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00 8.......H. .A...</td><td>41 ba 80 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 81 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 82 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00</td></tr>
+<tr class='danger-row'><td>948</td><td>svchost.exe</td><td>0x23f0000</td><td>0x246ffff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>128</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>00 48 8b 45 28 48 8d 40 08 48 89 c2 48 8b 45 20 .H.E(H.@.H..H.E</td><td>20 00 00 00 e0 ff 07 00 0c 00 00 00 01 00 05 00 00 42 00 50 00 30 00 70 00 60 00 00 00 00 00 00 48 8b 45 28 c7 00 00 00 00 00 c7 40 04 00 00 00 00 48 8b 45 28 48 8d 40 08 48 89 c2 48 8b 45 20</td></tr>
+<tr class='danger-row'><td>948</td><td>svchost.exe</td><td>0x4c90000</td><td>0x4d8ffff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>256</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>4c 8b c5 ff 95 e0 37 00 00 8b 4d 24 89 08 48 8d L.....7...M$..H.</td><td>20 00 00 00 e0 ff 0f 00 0c 00 00 00 01 00 05 00 00 42 00 50 00 30 00 70 00 60 00 00 00 00 00 00 ba fc ff ff ff 03 55 20 03 55 5c b9 04 00 1a 00 4c 8b c5 ff 95 e0 37 00 00 8b 4d 24 89 08 48 8d</td></tr>
+<tr class='danger-row'><td>1856</td><td>wmpnetwk.exe</td><td>0xb80000</td><td>0xb8ffff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>16</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00 8.......H. .A...</td><td>41 ba 80 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 81 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 82 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00</td></tr>
+<tr class='danger-row'><td>604</td><td>explorer.exe</td><td>0x2810000</td><td>0x281ffff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>16</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00 8.......H. .A...</td><td>41 ba 80 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 81 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 82 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00</td></tr>
+<tr class='danger-row'><td>604</td><td>explorer.exe</td><td>0x3db0000</td><td>0x3db0fff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>1</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................</td><td>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 db 03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</td></tr>
+<tr class='danger-row'><td>2424</td><td>mspaint.exe</td><td>0x2150000</td><td>0x2150fff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>1</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................</td><td>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</td></tr>
+<tr class='danger-row'><td>2504</td><td>explorer.exe</td><td>0x3ec0000</td><td>0x3ecffff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>16</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00 8.......H. .A...</td><td>41 ba 80 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 81 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 82 00 00 00 48 b8 38 a1 b7 fe fe 07 00 00 48 ff 20 90 41 ba 83 00</td></tr>
+<tr class='danger-row'><td>2504</td><td>explorer.exe</td><td>0x3eb0000</td><td>0x3eb0fff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>1</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ................</td><td>00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 eb 03 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00</td></tr>
+<tr class='danger-row'><td>1720</td><td>SearchFilterHo</td><td>0x9b0000</td><td>0xa2ffff</td><td>VadS</td><td><span class='badge badge-red'>PAGE_EXECUTE_READWRITE</span></td><td>2</td><td>1</td><td>Disabled</td><td>N/A</td><td></td></tr>
+<tr class=''><td>00 00 9b 00 00 00 00 00 80 00 00 00 00 00 00 00 ................</td><td>00 00 00 00 00 00 00 00 7a f3 fb b7 a9 80 00 01 ee ff ee ff 00 00 00 00 28 01 9b 00 00 00 00 00 28 01 9b 00 00 00 00 00 00 00 9b 00 00 00 00 00 00 00 9b 00 00 00 00 00 80 00 00 00 00 00 00 00</td></tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 2: Process Tree -->
+    <div id="tab-process" class="tab-content">
+        <div class="table-wrap">
+            <table id="table-process">
+                <thead>
+                    <tr><th>PID</th><th>PPID</th><th>ImageFileName</th><th>Offset(V)</th><th>Threads</th><th>Handles</th><th>SessionId</th><th>Wow64</th><th>CreateTime</th><th>ExitTime</th><th>Audit</th><th>Cmd</th><th>Path</th></tr>
+                </thead>
+                <tbody>
+                    <tr class=''><td>4</td><td>0</td><td>System</td><td>0xfa8000ca0040</td><td>80</td><td>570</td><td>N/A</td><td>False</td><td>2019-12-11 13:41:25.000000 UTC</td><td>N/A</td><td>-</td><td>-</td><td>-</td></tr>
+<tr class=''><td>* 248</td><td>4</td><td>smss.exe</td><td>0xfa800148f040</td><td>3</td><td>37</td><td>N/A</td><td>False</td><td>2019-12-11 13:41:25.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\smss.exe</td><td>\SystemRoot\System32\smss.exe</td><td>\SystemRoot\System32\smss.exe</td></tr>
+<tr class=''><td>** 376</td><td>248</td><td>psxss.exe</td><td>0xfa8001c45060</td><td>18</td><td>786</td><td>0</td><td>False</td><td>2019-12-11 13:41:33.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\psxss.exe</td><td>%SystemRoot%\system32\psxss.exe</td><td>C:\Windows\system32\psxss.exe</td></tr>
+<tr class=''><td>320</td><td>312</td><td>csrss.exe</td><td>0xfa800154f740</td><td>9</td><td>457</td><td>0</td><td>False</td><td>2019-12-11 13:41:32.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\csrss.exe</td><td>%SystemRoot%\system32\csrss.exe ObjectDirectory=\Windows SharedSection=1024,20480,768 Windows=On SubSystemType=Windows ServerDll=basesrv,1 ServerDll=winsrv:UserServerDllInitialization,3 ServerDll=winsrv:ConServerDllInitialization,2 ServerDll=sxssrv,4 ProfileControl=Off MaxRequestThreads=16</td><td>C:\Windows\system32\csrss.exe</td></tr>
+<tr class=''><td>368</td><td>360</td><td>csrss.exe</td><td>0xfa8000ca81e0</td><td>7</td><td>199</td><td>1</td><td>False</td><td>2019-12-11 13:41:33.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\csrss.exe</td><td>%SystemRoot%\system32\csrss.exe ObjectDirectory=\Windows SharedSection=1024,20480,768 Windows=On SubSystemType=Windows ServerDll=basesrv,1 ServerDll=winsrv:UserServerDllInitialization,3 ServerDll=winsrv:ConServerDllInitialization,2 ServerDll=sxssrv,4 ProfileControl=Off MaxRequestThreads=16</td><td>C:\Windows\system32\csrss.exe</td></tr>
+<tr class=''><td>* 2260</td><td>368</td><td>conhost.exe</td><td>0xfa800104a780</td><td>2</td><td>50</td><td>1</td><td>False</td><td>2019-12-11 14:37:54.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\conhost.exe</td><td>\??\C:\Windows\system32\conhost.exe</td><td>C:\Windows\system32\conhost.exe</td></tr>
+<tr class=''><td>* 2692</td><td>368</td><td>conhost.exe</td><td>0xfa8002227140</td><td>2</td><td>50</td><td>1</td><td>False</td><td>2019-12-11 14:34:54.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\conhost.exe</td><td>\??\C:\Windows\system32\conhost.exe</td><td>C:\Windows\system32\conhost.exe</td></tr>
+<tr class=''><td>416</td><td>360</td><td>winlogon.exe</td><td>0xfa8001c5f060</td><td>4</td><td>118</td><td>1</td><td>False</td><td>2019-12-11 13:41:34.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\winlogon.exe</td><td>winlogon.exe</td><td>C:\Windows\system32\winlogon.exe</td></tr>
+<tr class=''><td>424</td><td>312</td><td>wininit.exe</td><td>0xfa8001c5f630</td><td>3</td><td>75</td><td>0</td><td>False</td><td>2019-12-11 13:41:34.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\wininit.exe</td><td>wininit.exe</td><td>C:\Windows\system32\wininit.exe</td></tr>
+<tr class=''><td>* 500</td><td>424</td><td>lsm.exe</td><td>0xfa8001ca4b30</td><td>11</td><td>185</td><td>0</td><td>False</td><td>2019-12-11 13:41:35.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\lsm.exe</td><td>C:\Windows\system32\lsm.exe</td><td>C:\Windows\system32\lsm.exe</td></tr>
+<tr class=''><td>* 484</td><td>424</td><td>services.exe</td><td>0xfa8001c98530</td><td>13</td><td>219</td><td>0</td><td>False</td><td>2019-12-11 13:41:35.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\services.exe</td><td>C:\Windows\system32\services.exe</td><td>C:\Windows\system32\services.exe</td></tr>
+<tr class=''><td>** 1416</td><td>484</td><td>TCPSVCS.EXE</td><td>0xfa8001f91b30</td><td>4</td><td>97</td><td>0</td><td>False</td><td>2019-12-11 13:41:55.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\TCPSVCS.EXE</td><td>C:\Windows\System32\tcpsvcs.exe</td><td>C:\Windows\System32\tcpsvcs.exe</td></tr>
+<tr class=''><td>** 652</td><td>484</td><td>VBoxService.ex</td><td>0xfa8001d327c0</td><td>13</td><td>137</td><td>0</td><td>False</td><td>2019-12-11 13:41:40.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\VBoxService.exe</td><td>C:\Windows\System32\VBoxService.exe</td><td>C:\Windows\System32\VBoxService.exe</td></tr>
+<tr class=''><td>** 1044</td><td>484</td><td>svchost.exe</td><td>0xfa8001e50b30</td><td>14</td><td>366</td><td>0</td><td>False</td><td>2019-12-11 13:41:48.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\system32\svchost.exe -k NetworkService</td><td>C:\Windows\system32\svchost.exe</td></tr>
+<tr class=''><td>** 296</td><td>484</td><td>taskhost.exe</td><td>0xfa8001eb47f0</td><td>8</td><td>151</td><td>1</td><td>False</td><td>2019-12-11 14:32:24.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\taskhost.exe</td><td>&quot;taskhost.exe&quot;</td><td>C:\Windows\system32\taskhost.exe</td></tr>
+<tr class=''><td>** 816</td><td>484</td><td>svchost.exe</td><td>0xfa8001d8c420</td><td>23</td><td>569</td><td>0</td><td>False</td><td>2019-12-11 13:41:42.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\System32\svchost.exe -k LocalServiceNetworkRestricted</td><td>C:\Windows\System32\svchost.exe</td></tr>
+<tr class=''><td>** 948</td><td>484</td><td>svchost.exe</td><td>0xfa8001c38580</td><td>13</td><td>322</td><td>0</td><td>False</td><td>2019-12-11 14:16:07.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\System32\svchost.exe -k secsvcs</td><td>C:\Windows\System32\svchost.exe</td></tr>
+<tr class=''><td>** 1208</td><td>484</td><td>spoolsv.exe</td><td>0xfa8001eba230</td><td>13</td><td>282</td><td>0</td><td>False</td><td>2019-12-11 13:41:51.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\spoolsv.exe</td><td>C:\Windows\System32\spoolsv.exe</td><td>C:\Windows\System32\spoolsv.exe</td></tr>
+<tr class=''><td>** 1856</td><td>484</td><td>wmpnetwk.exe</td><td>0xfa8002170630</td><td>16</td><td>451</td><td>0</td><td>False</td><td>2019-12-11 14:16:08.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Program Files\Windows Media Player\wmpnetwk.exe</td><td>&quot;C:\Program Files\Windows Media Player\wmpnetwk.exe&quot;</td><td>C:\Program Files\Windows Media Player\wmpnetwk.exe</td></tr>
+<tr class=''><td>** 2368</td><td>484</td><td>svchost.exe</td><td>0xfa80022199e0</td><td>9</td><td>365</td><td>0</td><td>False</td><td>2019-12-11 14:32:51.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\System32\svchost.exe -k LocalServicePeerNet</td><td>C:\Windows\System32\svchost.exe</td></tr>
+<tr class=''><td>** 588</td><td>484</td><td>svchost.exe</td><td>0xfa8001cf4b30</td><td>11</td><td>358</td><td>0</td><td>False</td><td>2019-12-11 13:41:39.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\system32\svchost.exe -k DcomLaunch</td><td>C:\Windows\system32\svchost.exe</td></tr>
+<tr class=''><td>** 720</td><td>484</td><td>svchost.exe</td><td>0xfa8001d49b30</td><td>8</td><td>279</td><td>0</td><td>False</td><td>2019-12-11 13:41:41.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\system32\svchost.exe -k RPCSS</td><td>C:\Windows\system32\svchost.exe</td></tr>
+<tr class=''><td>** 852</td><td>484</td><td>svchost.exe</td><td>0xfa8001da5b30</td><td>28</td><td>542</td><td>0</td><td>False</td><td>2019-12-11 13:41:43.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\System32\svchost.exe -k LocalSystemNetworkRestricted</td><td>C:\Windows\System32\svchost.exe</td></tr>
+<tr class=''><td>** 472</td><td>484</td><td>svchost.exe</td><td>0xfa8001e1bb30</td><td>19</td><td>476</td><td>0</td><td>False</td><td>2019-12-11 13:41:47.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\system32\svchost.exe -k LocalService</td><td>C:\Windows\system32\svchost.exe</td></tr>
+<tr class=''><td>** 1372</td><td>484</td><td>svchost.exe</td><td>0xfa8001f58890</td><td>22</td><td>295</td><td>0</td><td>False</td><td>2019-12-11 13:41:54.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\system32\svchost.exe -k LocalServiceAndNoImpersonation</td><td>C:\Windows\system32\svchost.exe</td></tr>
+<tr class=''><td>** 2908</td><td>484</td><td>taskhost.exe</td><td>0xfa8000f3aab0</td><td>9</td><td>158</td><td>2</td><td>False</td><td>2019-12-11 14:37:13.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\taskhost.exe</td><td>&quot;taskhost.exe&quot;</td><td>C:\Windows\system32\taskhost.exe</td></tr>
+<tr class=''><td>** 1248</td><td>484</td><td>svchost.exe</td><td>0xfa8001eda060</td><td>19</td><td>313</td><td>0</td><td>False</td><td>2019-12-11 13:41:52.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\system32\svchost.exe -k LocalServiceNoNetwork</td><td>C:\Windows\system32\svchost.exe</td></tr>
+<tr class=''><td>** 480</td><td>484</td><td>SearchIndexer.</td><td>0xfa8001d376f0</td><td>14</td><td>701</td><td>0</td><td>False</td><td>2019-12-11 14:16:09.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\SearchIndexer.exe</td><td>C:\Windows\system32\SearchIndexer.exe /Embedding</td><td>C:\Windows\system32\SearchIndexer.exe</td></tr>
+<tr class=''><td>** 1508</td><td>484</td><td>sppsvc.exe</td><td>0xfa8000d3c400</td><td>4</td><td>141</td><td>0</td><td>False</td><td>2019-12-11 14:16:06.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\sppsvc.exe</td><td>C:\Windows\system32\sppsvc.exe</td><td>C:\Windows\system32\sppsvc.exe</td></tr>
+<tr class=''><td>** 2660</td><td>484</td><td>svchost.exe</td><td>0xfa8000eac770</td><td>6</td><td>100</td><td>0</td><td>False</td><td>2019-12-11 14:35:14.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\system32\svchost.exe -k imgsvc</td><td>C:\Windows\system32\svchost.exe</td></tr>
+<tr class=''><td>** 876</td><td>484</td><td>svchost.exe</td><td>0xfa8001da96c0</td><td>32</td><td>941</td><td>0</td><td>False</td><td>2019-12-11 13:41:43.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\svchost.exe</td><td>C:\Windows\system32\svchost.exe -k netsvcs</td><td>C:\Windows\system32\svchost.exe</td></tr>
+<tr class=''><td>* 492</td><td>424</td><td>lsass.exe</td><td>0xfa8001ca0580</td><td>9</td><td>764</td><td>0</td><td>False</td><td>2019-12-11 13:41:35.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\lsass.exe</td><td>C:\Windows\system32\lsass.exe</td><td>C:\Windows\system32\lsass.exe</td></tr>
+<tr class=''><td>604</td><td>2016</td><td>explorer.exe</td><td>0xfa8002046960</td><td>33</td><td>927</td><td>1</td><td>False</td><td>2019-12-11 14:32:25.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\explorer.exe</td><td>C:\Windows\Explorer.EXE</td><td>C:\Windows\Explorer.EXE</td></tr>
+<tr class='danger-row'><td>* 1984</td><td>604</td><td>cmd.exe</td><td>0xfa8002222780</td><td>1</td><td>21</td><td>1</td><td>False</td><td>2019-12-11 14:34:54.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\cmd.exe</td><td>&quot;C:\Windows\system32\cmd.exe&quot;</td><td>C:\Windows\system32\cmd.exe</td></tr>
+<tr class=''><td>* 1844</td><td>604</td><td>VBoxTray.exe</td><td>0xfa80021c75d0</td><td>11</td><td>140</td><td>1</td><td>False</td><td>2019-12-11 14:32:35.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\VBoxTray.exe</td><td>&quot;C:\Windows\System32\VBoxTray.exe&quot;</td><td>C:\Windows\System32\VBoxTray.exe</td></tr>
+<tr class=''><td>* 796</td><td>604</td><td>DumpIt.exe</td><td>0xfa8001048060</td><td>2</td><td>45</td><td>1</td><td>True</td><td>2019-12-11 14:37:54.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Users\SmartNet\Downloads\DumpIt\DumpIt.exe</td><td>&quot;C:\Users\SmartNet\Downloads\DumpIt\DumpIt.exe&quot;</td><td>C:\Users\SmartNet\Downloads\DumpIt\DumpIt.exe</td></tr>
+<tr class=''><td>* 2424</td><td>604</td><td>mspaint.exe</td><td>0xfa80022bab30</td><td>6</td><td>128</td><td>1</td><td>False</td><td>2019-12-11 14:35:14.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\mspaint.exe</td><td>&quot;C:\Windows\system32\mspaint.exe&quot;</td><td>C:\Windows\system32\mspaint.exe</td></tr>
+<tr class=''><td>2760</td><td>2680</td><td>csrss.exe</td><td>0xfa8001e68060</td><td>7</td><td>172</td><td>2</td><td>False</td><td>2019-12-11 14:37:05.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\csrss.exe</td><td>%SystemRoot%\system32\csrss.exe ObjectDirectory=\Windows SharedSection=1024,20480,768 Windows=On SubSystemType=Windows ServerDll=basesrv,1 ServerDll=winsrv:UserServerDllInitialization,3 ServerDll=winsrv:ConServerDllInitialization,2 ServerDll=sxssrv,4 ProfileControl=Off MaxRequestThreads=16</td><td>C:\Windows\system32\csrss.exe</td></tr>
+<tr class=''><td>2808</td><td>2680</td><td>winlogon.exe</td><td>0xfa8000ecbb30</td><td>4</td><td>119</td><td>2</td><td>False</td><td>2019-12-11 14:37:05.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\winlogon.exe</td><td>winlogon.exe</td><td>C:\Windows\system32\winlogon.exe</td></tr>
+<tr class=''><td>2504</td><td>3000</td><td>explorer.exe</td><td>0xfa8000f4c670</td><td>34</td><td>825</td><td>2</td><td>False</td><td>2019-12-11 14:37:14.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\explorer.exe</td><td>C:\Windows\Explorer.EXE</td><td>C:\Windows\Explorer.EXE</td></tr>
+<tr class=''><td>* 2304</td><td>2504</td><td>VBoxTray.exe</td><td>0xfa8000f9a4e0</td><td>14</td><td>144</td><td>2</td><td>False</td><td>2019-12-11 14:37:14.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Windows\System32\VBoxTray.exe</td><td>&quot;C:\Windows\System32\VBoxTray.exe&quot;</td><td>C:\Windows\System32\VBoxTray.exe</td></tr>
+<tr class='danger-row'><td>* 1512</td><td>2504</td><td>WinRAR.exe</td><td>0xfa8001010b30</td><td>6</td><td>207</td><td>2</td><td>False</td><td>2019-12-11 14:37:23.000000 UTC</td><td>N/A</td><td>\Device\HarddiskVolume2\Program Files\WinRAR\WinRAR.exe</td><td><span class='badge badge-red'>🚨 &quot;C:\Program Files\WinRAR\WinRAR.exe&quot; &quot;C:\Users\Alissa Simpson\Documents\Important.rar&quot;</span></td><td>C:\Program Files\WinRAR\WinRAR.exe</td></tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Tab 3: Network -->
+    <div id="tab-network" class="tab-content">
+        <div class="table-wrap">
+            <table id="table-network">
+                <thead>
+                    <tr><th>Offset</th><th>Proto</th><th>LocalAddr</th><th>LocalPort</th><th>ForeignAddr</th><th>ForeignPort</th><th>State</th><th>PID</th><th>Owner</th><th>Created</th></tr>
+                </thead>
+                <tbody>
+                    <tr class=''><td>0x3e80b840</td><td>UDPv4</td><td>0.0.0.0</td><td>3702</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3e80b840</td><td>UDPv6</td><td>::</td><td>3702</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3e80bbb0</td><td>UDPv4</td><td>0.0.0.0</td><td>3702</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3e80bbb0</td><td>UDPv6</td><td>::</td><td>3702</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3e820ec0</td><td>UDPv4</td><td>0.0.0.0</td><td>0</td><td>*</td><td>0</td><td></td><td>2368</td><td>svchost.exe</td><td>2019-12-11 14:32:51.000000 UTC</td></tr>
+<tr class=''><td>0x3e820ec0</td><td>UDPv6</td><td>::</td><td>0</td><td>*</td><td>0</td><td></td><td>2368</td><td>svchost.exe</td><td>2019-12-11 14:32:51.000000 UTC</td></tr>
+<tr class=''><td>0x3e825ec0</td><td>UDPv4</td><td>0.0.0.0</td><td>0</td><td>*</td><td>0</td><td></td><td>2368</td><td>svchost.exe</td><td>2019-12-11 14:32:52.000000 UTC</td></tr>
+<tr class=''><td>0x3e825ec0</td><td>UDPv6</td><td>::</td><td>0</td><td>*</td><td>0</td><td></td><td>2368</td><td>svchost.exe</td><td>2019-12-11 14:32:52.000000 UTC</td></tr>
+<tr class=''><td>0x3e86c5a0</td><td>UDPv4</td><td>0.0.0.0</td><td>0</td><td>*</td><td>0</td><td></td><td>2368</td><td>svchost.exe</td><td>2019-12-11 14:33:03.000000 UTC</td></tr>
+<tr class=''><td>0x3e86c5a0</td><td>UDPv6</td><td>::</td><td>0</td><td>*</td><td>0</td><td></td><td>2368</td><td>svchost.exe</td><td>2019-12-11 14:33:03.000000 UTC</td></tr>
+<tr class=''><td>0x3e8acba0</td><td>UDPv4</td><td>0.0.0.0</td><td>59438</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:33:14.000000 UTC</td></tr>
+<tr class=''><td>0x3e8acba0</td><td>UDPv6</td><td>::</td><td>59438</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:33:14.000000 UTC</td></tr>
+<tr class=''><td>0x3e8ae9c0</td><td>UDPv4</td><td>0.0.0.0</td><td>59437</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:33:14.000000 UTC</td></tr>
+<tr class=''><td>0x3ea01720</td><td>TCPv4</td><td>0.0.0.0</td><td>19</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ea062d0</td><td>UDPv4</td><td>0.0.0.0</td><td>19</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ea062d0</td><td>UDPv6</td><td>::</td><td>19</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ea06a40</td><td>UDPv4</td><td>0.0.0.0</td><td>19</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ea06ef0</td><td>TCPv4</td><td>0.0.0.0</td><td>19</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ea06ef0</td><td>TCPv6</td><td>::</td><td>19</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ea0b900</td><td>TCPv4</td><td>0.0.0.0</td><td>17</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ea10200</td><td>UDPv4</td><td>0.0.0.0</td><td>17</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ea10200</td><td>UDPv6</td><td>::</td><td>17</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ea10970</td><td>UDPv4</td><td>0.0.0.0</td><td>17</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ea10ef0</td><td>TCPv4</td><td>0.0.0.0</td><td>17</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ea10ef0</td><td>TCPv6</td><td>::</td><td>17</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ea39190</td><td>UDPv4</td><td>0.0.0.0</td><td>49194</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:41:58.000000 UTC</td></tr>
+<tr class=''><td>0x3ea3c940</td><td>UDPv4</td><td>0.0.0.0</td><td>49195</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:41:58.000000 UTC</td></tr>
+<tr class=''><td>0x3ea3c940</td><td>UDPv6</td><td>::</td><td>49195</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:41:58.000000 UTC</td></tr>
+<tr class=''><td>0x3ea4a670</td><td>TCPv4</td><td>0.0.0.0</td><td>49156</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>484</td><td>services.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ea4a670</td><td>TCPv6</td><td>::</td><td>49156</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>484</td><td>services.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ea536b0</td><td>TCPv4</td><td>0.0.0.0</td><td>49156</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>484</td><td>services.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ea5a640</td><td>TCPv4</td><td>0.0.0.0</td><td>445</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3ea5a640</td><td>TCPv6</td><td>::</td><td>445</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3ea5d010</td><td>UDPv4</td><td>0.0.0.0</td><td>0</td><td>*</td><td>0</td><td></td><td>1044</td><td>svchost.exe</td><td>2019-12-11 13:42:02.000000 UTC</td></tr>
+<tr class=''><td>0x3ea5d010</td><td>UDPv6</td><td>::</td><td>0</td><td>*</td><td>0</td><td></td><td>1044</td><td>svchost.exe</td><td>2019-12-11 13:42:02.000000 UTC</td></tr>
+<tr class=''><td>0x3eaab540</td><td>UDPv4</td><td>0.0.0.0</td><td>5355</td><td>*</td><td>0</td><td></td><td>1044</td><td>svchost.exe</td><td>2019-12-11 13:42:05.000000 UTC</td></tr>
+<tr class=''><td>0x3eaab540</td><td>UDPv6</td><td>::</td><td>5355</td><td>*</td><td>0</td><td></td><td>1044</td><td>svchost.exe</td><td>2019-12-11 13:42:05.000000 UTC</td></tr>
+<tr class=''><td>0x3eaaece0</td><td>UDPv4</td><td>10.0.2.15</td><td>137</td><td>*</td><td>0</td><td></td><td>4</td><td>System</td><td>2019-12-11 13:42:02.000000 UTC</td></tr>
+<tr class=''><td>0x3eac7760</td><td>TCPv4</td><td>0.0.0.0</td><td>3587</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>2368</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3eac7760</td><td>TCPv6</td><td>::</td><td>3587</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>2368</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ebfe300</td><td>UDPv4</td><td>0.0.0.0</td><td>3702</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3ebfeb00</td><td>UDPv4</td><td>0.0.0.0</td><td>59435</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3ebff1a0</td><td>UDPv4</td><td>0.0.0.0</td><td>3702</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3ebff9b0</td><td>UDPv4</td><td>0.0.0.0</td><td>59436</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3ebff9b0</td><td>UDPv6</td><td>::</td><td>59436</td><td>*</td><td>0</td><td></td><td>472</td><td>svchost.exe</td><td>2019-12-11 14:32:50.000000 UTC</td></tr>
+<tr class=''><td>0x3ec1e6b0</td><td>UDPv4</td><td>0.0.0.0</td><td>5004</td><td>*</td><td>0</td><td></td><td>1856</td><td>wmpnetwk.exe</td><td>2019-12-11 14:16:11.000000 UTC</td></tr>
+<tr class=''><td>0x3ec1ebb0</td><td>UDPv4</td><td>0.0.0.0</td><td>5004</td><td>*</td><td>0</td><td></td><td>1856</td><td>wmpnetwk.exe</td><td>2019-12-11 14:16:11.000000 UTC</td></tr>
+<tr class=''><td>0x3ec1ebb0</td><td>UDPv6</td><td>::</td><td>5004</td><td>*</td><td>0</td><td></td><td>1856</td><td>wmpnetwk.exe</td><td>2019-12-11 14:16:11.000000 UTC</td></tr>
+<tr class=''><td>0x3ec1f7c0</td><td>UDPv4</td><td>0.0.0.0</td><td>5005</td><td>*</td><td>0</td><td></td><td>1856</td><td>wmpnetwk.exe</td><td>2019-12-11 14:16:11.000000 UTC</td></tr>
+<tr class=''><td>0x3ec1f7c0</td><td>UDPv6</td><td>::</td><td>5005</td><td>*</td><td>0</td><td></td><td>1856</td><td>wmpnetwk.exe</td><td>2019-12-11 14:16:11.000000 UTC</td></tr>
+<tr class=''><td>0x3ec6f730</td><td>UDPv4</td><td>0.0.0.0</td><td>3702</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:42:09.000000 UTC</td></tr>
+<tr class=''><td>0x3ec6f730</td><td>UDPv6</td><td>::</td><td>3702</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:42:09.000000 UTC</td></tr>
+<tr class=''><td>0x3ec6fa40</td><td>UDPv4</td><td>10.0.2.15</td><td>138</td><td>*</td><td>0</td><td></td><td>4</td><td>System</td><td>2019-12-11 13:42:02.000000 UTC</td></tr>
+<tr class=''><td>0x3ec72ae0</td><td>UDPv4</td><td>127.0.0.1</td><td>64388</td><td>*</td><td>0</td><td></td><td>1044</td><td>svchost.exe</td><td>2019-12-11 13:42:02.000000 UTC</td></tr>
+<tr class=''><td>0x3ec742f0</td><td>UDPv4</td><td>0.0.0.0</td><td>5355</td><td>*</td><td>0</td><td></td><td>1044</td><td>svchost.exe</td><td>2019-12-11 13:42:05.000000 UTC</td></tr>
+<tr class=''><td>0x3ec97240</td><td>TCPv4</td><td>0.0.0.0</td><td>49154</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>492</td><td>lsass.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ec99660</td><td>TCPv4</td><td>0.0.0.0</td><td>49154</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>492</td><td>lsass.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ec99660</td><td>TCPv6</td><td>::</td><td>49154</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>492</td><td>lsass.exe</td><td>-</td></tr>
+<tr class=''><td>0x3eca4230</td><td>TCPv4</td><td>0.0.0.0</td><td>49155</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>876</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3eca4230</td><td>TCPv6</td><td>::</td><td>49155</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>876</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3eca4350</td><td>TCPv4</td><td>0.0.0.0</td><td>49155</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>876</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ecb12e0</td><td>TCPv4</td><td>0.0.0.0</td><td>554</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1856</td><td>wmpnetwk.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ecb12e0</td><td>TCPv6</td><td>::</td><td>554</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1856</td><td>wmpnetwk.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ecb1970</td><td>TCPv4</td><td>0.0.0.0</td><td>554</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1856</td><td>wmpnetwk.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ecb2ad0</td><td>TCPv4</td><td>0.0.0.0</td><td>2869</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3ecb2ad0</td><td>TCPv6</td><td>::</td><td>2869</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3ed4ae40</td><td>UDPv4</td><td>0.0.0.0</td><td>3540</td><td>*</td><td>0</td><td></td><td>2368</td><td>svchost.exe</td><td>2019-12-11 14:33:03.000000 UTC</td></tr>
+<tr class=''><td>0x3ed4ae40</td><td>UDPv6</td><td>::</td><td>3540</td><td>*</td><td>0</td><td></td><td>2368</td><td>svchost.exe</td><td>2019-12-11 14:33:03.000000 UTC</td></tr>
+<tr class=''><td>0x3ed4d610</td><td>TCPv6</td><td>::1</td><td>49163</td><td>::1</td><td>2869</td><td><span class='badge badge-gray'>CLOSED</span></td><td>1856</td><td>wmpnetwk.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ed58ec0</td><td>UDPv4</td><td>0.0.0.0</td><td>3702</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:42:09.000000 UTC</td></tr>
+<tr class=''><td>0x3ed95690</td><td>UDPv4</td><td>0.0.0.0</td><td>0</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:55.000000 UTC</td></tr>
+<tr class=''><td>0x3ed9edd0</td><td>UDPv4</td><td>0.0.0.0</td><td>3702</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:42:09.000000 UTC</td></tr>
+<tr class=''><td>0x3edd2160</td><td>TCPv4</td><td>0.0.0.0</td><td>5357</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3edd2160</td><td>TCPv6</td><td>::</td><td>5357</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3ede4ef0</td><td>TCPv4</td><td>0.0.0.0</td><td>9</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ede4ef0</td><td>TCPv6</td><td>::</td><td>9</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ede5270</td><td>UDPv4</td><td>0.0.0.0</td><td>9</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ede69a0</td><td>TCPv4</td><td>0.0.0.0</td><td>9</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ede75d0</td><td>TCPv4</td><td>0.0.0.0</td><td>13</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ede7ec0</td><td>UDPv4</td><td>0.0.0.0</td><td>9</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ede7ec0</td><td>UDPv6</td><td>::</td><td>9</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ede8010</td><td>TCPv4</td><td>0.0.0.0</td><td>7</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ede8280</td><td>UDPv4</td><td>0.0.0.0</td><td>7</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ede86e0</td><td>TCPv4</td><td>0.0.0.0</td><td>7</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ede86e0</td><td>TCPv6</td><td>::</td><td>7</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ededd00</td><td>UDPv4</td><td>0.0.0.0</td><td>7</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3ededd00</td><td>UDPv6</td><td>::</td><td>7</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3edfc170</td><td>UDPv4</td><td>0.0.0.0</td><td>13</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3edfc170</td><td>UDPv6</td><td>::</td><td>13</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3edfc670</td><td>UDPv4</td><td>0.0.0.0</td><td>13</td><td>*</td><td>0</td><td></td><td>1416</td><td>TCPSVCS.EXE</td><td>2019-12-11 13:41:56.000000 UTC</td></tr>
+<tr class=''><td>0x3edfcad0</td><td>TCPv4</td><td>0.0.0.0</td><td>13</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3edfcad0</td><td>TCPv6</td><td>::</td><td>13</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>1416</td><td>TCPSVCS.EXE</td><td>-</td></tr>
+<tr class=''><td>0x3ee4f3e0</td><td>UDPv6</td><td>::1</td><td>59432</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 14:16:09.000000 UTC</td></tr>
+<tr class=''><td>0x3ee4f680</td><td>UDPv6</td><td>fe80::b137:133f:8d0b:8cfe</td><td>59431</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 14:16:09.000000 UTC</td></tr>
+<tr class=''><td>0x3ee90da0</td><td>TCPv4</td><td>0.0.0.0</td><td>10243</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3ee90da0</td><td>TCPv6</td><td>::</td><td>10243</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3eeecad0</td><td>UDPv4</td><td>10.0.2.15</td><td>1900</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 14:16:09.000000 UTC</td></tr>
+<tr class=''><td>0x3eeecd70</td><td>UDPv6</td><td>::1</td><td>1900</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 14:16:09.000000 UTC</td></tr>
+<tr class=''><td>0x3eef0bb0</td><td>UDPv4</td><td>127.0.0.1</td><td>1900</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 14:16:09.000000 UTC</td></tr>
+<tr class=''><td>0x3ef0c6c0</td><td>TCPv4</td><td>10.0.2.15</td><td>139</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3ef4d010</td><td>TCPv4</td><td>0.0.0.0</td><td>135</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>720</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ef4d010</td><td>TCPv6</td><td>::</td><td>135</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>720</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ef54350</td><td>TCPv4</td><td>0.0.0.0</td><td>49152</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>424</td><td>wininit.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ef55cd0</td><td>TCPv4</td><td>0.0.0.0</td><td>135</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>720</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ef5b440</td><td>TCPv4</td><td>0.0.0.0</td><td>49152</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>424</td><td>wininit.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ef5b440</td><td>TCPv6</td><td>::</td><td>49152</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>424</td><td>wininit.exe</td><td>-</td></tr>
+<tr class=''><td>0x3ef68010</td><td>UDPv4</td><td>0.0.0.0</td><td>3702</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:42:09.000000 UTC</td></tr>
+<tr class=''><td>0x3ef68010</td><td>UDPv6</td><td>::</td><td>3702</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 13:42:09.000000 UTC</td></tr>
+<tr class=''><td>0x3ef80cf0</td><td>TCPv6</td><td>::1</td><td>2869</td><td>::1</td><td>49163</td><td><span class='badge badge-gray'>CLOSED</span></td><td>4</td><td>System</td><td>-</td></tr>
+<tr class=''><td>0x3efaf010</td><td>TCPv4</td><td>0.0.0.0</td><td>49153</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>816</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3efb0ad0</td><td>TCPv4</td><td>0.0.0.0</td><td>49153</td><td>0.0.0.0</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>816</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3efb0ad0</td><td>TCPv6</td><td>::</td><td>49153</td><td>::</td><td>0</td><td><span class='badge badge-blue'>LISTENING</span></td><td>816</td><td>svchost.exe</td><td>-</td></tr>
+<tr class=''><td>0x3efc0ec0</td><td>UDPv4</td><td>0.0.0.0</td><td>5005</td><td>*</td><td>0</td><td></td><td>1856</td><td>wmpnetwk.exe</td><td>2019-12-11 14:16:11.000000 UTC</td></tr>
+<tr class=''><td>0x3f63cd70</td><td>UDPv4</td><td>10.0.2.15</td><td>59433</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 14:16:09.000000 UTC</td></tr>
+<tr class=''><td>0x3f63dc20</td><td>UDPv6</td><td>fe80::b137:133f:8d0b:8cfe</td><td>1900</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 14:16:09.000000 UTC</td></tr>
+<tr class=''><td>0x3f63dec0</td><td>UDPv4</td><td>127.0.0.1</td><td>59434</td><td>*</td><td>0</td><td></td><td>1372</td><td>svchost.exe</td><td>2019-12-11 14:16:09.000000 UTC</td></tr>
+<tr class=''><td>0x3f794010</td><td>TCPv6</td><td>-</td><td>0</td><td>4800:ca00:80fa:ffff:4800:ca00:80fa:ffff</td><td>0</td><td><span class='badge badge-gray'>CLOSED</span></td><td>1044</td><td>svchost.exe</td><td>N/A</td></tr>
+<tr class=''><td>0x3fcc4b60</td><td>UDPv4</td><td>0.0.0.0</td><td>0</td><td>*</td><td>0</td><td></td><td>652</td><td>VBoxService.ex</td><td>2019-12-11 14:37:57.000000 UTC</td></tr>
+
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(tabId, el) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            el.classList.add('active');
+        }
+
+        // Real-time table filter logic
+        document.getElementById('filterInput').addEventListener('keyup', function() {
+            const query = this.value.toLowerCase();
+            const activeTable = document.querySelector('.tab-content.active table tbody');
+            const rows = activeTable.querySelectorAll('tr');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                row.style.display = text.includes(query) ? '' : 'none';
+            });
+        });
+    </script>
+</body>
+</html>
